@@ -1,4 +1,5 @@
 import requests
+import pprint
 
 from anylog_api.error_codes import HTTP_STATUS_CODES
 from anylog_api.error_codes import REST_EXCEPTION_CODES
@@ -6,7 +7,18 @@ from anylog_api.error_codes import REQUEST_EXCEPTION_MAP
 
 
 class RestConn:
-    def __init__(self, conn:str, auth:tuple|None=None, timeout:float=30):
+    def __init__(self, conn:str, auth:tuple|None=None, timeout:int=30):
+        """
+        Generic connection to AnyLog/EdgeLake REST API
+        :args:
+            conn:str - url base
+            auth:tuple - authentication information
+            timeout:int - REST timeout
+        :params:
+            self.url:str - full URL
+            self.auth:tuple - authentication information
+            self.timeout:int - REST timeout
+        """
         self.url = f"http://{conn}" if not conn.startswith("http") else conn
         self.auth = auth
         self.timeout  = timeout
@@ -114,7 +126,7 @@ class RestConn:
         return:
             output | response
         """
-        response = self.execute_command(method="PUT", headers=headers, json_payload=None, data_payload=None)
+        response = self.execute_command(method="GET", headers=headers, json_payload=None, data_payload=None)
 
         if parse_results:
             try:
@@ -126,5 +138,23 @@ class RestConn:
                     raise Exception(f"Failed to parse content from {self.url} for command {headers.get("command")} (Error: {error})")
 
         return response
+
+    def get_help(self, command:str):
+        """
+        Get help for a command
+        :args:
+            command:str - command to get help for
+        :params:
+           headers:dict - REST header to execute `help` for the command
+        :return:
+            print response for `help` against command
+        """
+        headers = {
+            "command": f"help {command}",
+            "User-Agent": "AnyLog/1.23"
+        }
+
+        response = self.execute_get(headers=headers, parse_results=True)
+        pprint.pprint(response)
 
 
